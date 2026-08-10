@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+  <meta name="description" content="Everything — habits, tasks, planning, focus and personal finance in one calm place. Works offline, no account needed.">
+  <meta name="theme-color" content="#F5F5F7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121216" media="(prefers-color-scheme: dark)">
+
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Everything">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>Everything — productivity &amp; finance</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #F5F5F7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overscroll-behavior: none;
+    }
+    @media (prefers-color-scheme: dark) {
+      html, body { background: #121216; }
+    }
+
+    /* Shown until Flutter paints its first frame, then faded out. */
+    #boot {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      transition: opacity .35s ease;
+      z-index: 10;
+    }
+    #boot.done { opacity: 0; pointer-events: none; }
+
+    .mark {
+      width: 68px;
+      height: 68px;
+      border-radius: 20px;
+      background: #5B5BD6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 30px;
+      font-weight: 700;
+      box-shadow: 0 10px 30px rgba(91, 91, 214, .28);
+      animation: rise .6s cubic-bezier(.2,.8,.2,1) both;
+    }
+    .name {
+      font-size: 17px;
+      font-weight: 650;
+      letter-spacing: -0.3px;
+      color: #1a1a1f;
+      animation: rise .6s .06s cubic-bezier(.2,.8,.2,1) both;
+    }
+    .sub {
+      font-size: 13px;
+      color: #6b6b76;
+      margin-top: -12px;
+      animation: rise .6s .12s cubic-bezier(.2,.8,.2,1) both;
+    }
+    @media (prefers-color-scheme: dark) {
+      .name { color: #f2f2f5; }
+      .sub { color: #9a9aa5; }
+    }
+    .bar {
+      width: 132px;
+      height: 3px;
+      border-radius: 3px;
+      background: rgba(120,120,140,.18);
+      overflow: hidden;
+    }
+    .bar span {
+      display: block;
+      width: 40%;
+      height: 100%;
+      border-radius: 3px;
+      background: #5B5BD6;
+      animation: slide 1.15s ease-in-out infinite;
+    }
+    @keyframes slide {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(330%); }
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .mark, .name, .sub { animation: none; }
+      .bar span { animation-duration: 3s; }
+    }
+  </style>
+</head>
+<body>
+  <div id="boot">
+    <div class="mark">∞</div>
+    <div class="name">Everything</div>
+    <div class="sub">Productivity &amp; finance, in one place</div>
+    <div class="bar"><span></span></div>
+  </div>
+
+  <script>
+    // Flutter fires this once the first frame is on screen.
+    window.addEventListener('flutter-first-frame', function () {
+      var boot = document.getElementById('boot');
+      if (!boot) return;
+      boot.classList.add('done');
+      setTimeout(function () { boot.remove(); }, 400);
+    });
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "everything-web",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["tool/serve_web.mjs", "8099"],
+      "port": 8099
+    }
+  ]
+}

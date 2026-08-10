@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/widget_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Today's habits"
+        android:textStyle="bold"
+        android:textSize="14sp"
+        android:textColor="#DE000000"
+        android:paddingBottom="6dp"/>
+
+    <TextView
+        android:id="@+id/widget_empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Nothing scheduled today"
+        android:textSize="13sp"
+        android:textColor="#8A000000"
+        android:visibility="gone"/>
+
+    <LinearLayout android:id="@+id/habit_row_0" style="@style/HabitWidgetRow">
+        <ImageView android:id="@+id/habit_check_0" style="@style/HabitWidgetCheck"/>
+        <TextView android:id="@+id/habit_title_0" style="@style/HabitWidgetTitle"/>
+    </LinearLayout>
+    <LinearLayout android:id="@+id/habit_row_1" style="@style/HabitWidgetRow">
+        <ImageView android:id="@+id/habit_check_1" style="@style/HabitWidgetCheck"/>
+        <TextView android:id="@+id/habit_title_1" style="@style/HabitWidgetTitle"/>
+    </LinearLayout>
+    <LinearLayout android:id="@+id/habit_row_2" style="@style/HabitWidgetRow">
+        <ImageView android:id="@+id/habit_check_2" style="@style/HabitWidgetCheck"/>
+        <TextView android:id="@+id/habit_title_2" style="@style/HabitWidgetTitle"/>
+    </LinearLayout>
+    <LinearLayout android:id="@+id/habit_row_3" style="@style/HabitWidgetRow">
+        <ImageView android:id="@+id/habit_check_3" style="@style/HabitWidgetCheck"/>
+        <TextView android:id="@+id/habit_title_3" style="@style/HabitWidgetTitle"/>
+    </LinearLayout>
+    <LinearLayout android:id="@+id/habit_row_4" style="@style/HabitWidgetRow">
+        <ImageView android:id="@+id/habit_check_4" style="@style/HabitWidgetCheck"/>
+        <TextView android:id="@+id/habit_title_4" style="@style/HabitWidgetTitle"/>
+    </LinearLayout>
+    <LinearLayout android:id="@+id/habit_row_5" style="@style/HabitWidgetRow">
+        <ImageView android:id="@+id/habit_check_5" style="@style/HabitWidgetCheck"/>
+        <TextView android:id="@+id/habit_title_5" style="@style/HabitWidgetTitle"/>
+    </LinearLayout>
+</LinearLayout>

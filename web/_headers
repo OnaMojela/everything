@@ -1,0 +1,21 @@
+# Netlify / Cloudflare Pages header rules (copied into build/web at build time).
+#
+# Cross-origin isolation lets the database use OPFS (fast, synchronous) instead
+# of falling back to IndexedDB. The app works either way — this is a speed win.
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+
+# Never cache the entry points, or users get stuck on an old build.
+/index.html
+  Cache-Control: no-cache
+/flutter_bootstrap.js
+  Cache-Control: no-cache
+/flutter_service_worker.js
+  Cache-Control: no-cache
+
+# Hashed build artefacts are safe to cache hard.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+/canvaskit/*
+  Cache-Control: public, max-age=31536000, immutable

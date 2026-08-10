@@ -1,0 +1,16 @@
+# Build outputs and caches — Vercel rebuilds these from source.
+build/
+.dart_tool/
+.flutter-plugins-dependencies
+
+# Platform projects the web build has no use for.
+android/
+ios/
+macos/
+linux/
+windows/
+
+# Local tooling.
+.idea/
+*.iml
+test/
