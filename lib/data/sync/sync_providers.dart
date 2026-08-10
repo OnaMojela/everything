@@ -15,18 +15,39 @@ import 'sync_service.dart';
 SupabaseClient? _client;
 
 /// Brings up Supabase before the app runs. Safe to call when unconfigured.
+///
+/// Failure here is deliberately not fatal. This is an offline-first app: a
+/// missing network permission, a device with no connection, or a malformed
+/// key should cost the user sync, not the whole app. Letting the exception
+/// escape would happen before `runApp`, so nothing would ever render and the
+/// app would simply crash-loop on launch — which is exactly what a release
+/// build without `android.permission.INTERNET` did.
 Future<void> initSupabase() async {
   if (!SupabaseConfig.isConfigured) return;
-  await Supabase.initialize(
-    url: SupabaseConfig.url,
-    publishableKey: SupabaseConfig.anonKey,
-    authOptions: const FlutterAuthClientOptions(
-      // Sessions survive restarts, so a phone that has been offline for a
-      // week still comes back signed in.
-      autoRefreshToken: true,
-    ),
-  );
-  _client = Supabase.instance.client;
+  try {
+    await Supabase.initialize(
+      url: SupabaseConfig.url,
+      publishableKey: SupabaseConfig.anonKey,
+      authOptions: const FlutterAuthClientOptions(
+        // Sessions survive restarts, so a phone that has been offline for a
+        // week still comes back signed in.
+        autoRefreshToken: true,
+      ),
+    );
+    _client = Supabase.instance.client;
+  } catch (error, stack) {
+    _client = null;
+    // The sync UI keys off `syncAvailableProvider`, so it hides itself and
+    // the rest of the app carries on exactly as it does offline.
+    FlutterError.reportError(FlutterErrorDetails(
+      exception: error,
+      stack: stack,
+      library: 'everything/sync',
+      context: ErrorDescription(
+        'initialising Supabase — continuing without sync',
+      ),
+    ));
+  }
 }
 
 final supabaseClientProvider = Provider<SupabaseClient?>((ref) => _client);
