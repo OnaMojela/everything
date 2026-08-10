@@ -24,6 +24,42 @@ class AuthService {
   User? get currentUser => _supabase.auth.currentUser;
   Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange;
 
+  // -- email and password ---------------------------------------------------
+
+  Future<void> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    await _supabase.auth.signInWithPassword(
+      email: email.trim(),
+      password: password,
+    );
+  }
+
+  /// Creates an account. Returns true when the session started immediately,
+  /// false when the project requires the address to be confirmed first — in
+  /// which case nothing is signed in until the emailed link is opened.
+  Future<bool> signUpWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    final response = await _supabase.auth.signUp(
+      email: email.trim(),
+      password: password,
+      // Where the confirmation link lands. Uses the current origin so the same
+      // build works on localhost, a Vercel preview and production.
+      emailRedirectTo: kIsWeb ? Uri.base.origin : null,
+    );
+    return response.session != null;
+  }
+
+  Future<void> sendPasswordReset(String email) => _supabase.auth.resetPasswordForEmail(
+        email.trim(),
+        redirectTo: kIsWeb ? Uri.base.origin : null,
+      );
+
+  // -- google ---------------------------------------------------------------
+
   Future<void> signInWithGoogle() async {
     if (kIsWeb) {
       await _supabase.auth.signInWithOAuth(

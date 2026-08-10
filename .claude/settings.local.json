@@ -62,7 +62,10 @@
       "Bash(bash -n tool/vercel_build.sh)",
       "Bash(node --check tool/serve_web.mjs)",
       "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('vercel.json','utf8'\\)\\); console.log\\('vercel.json OK'\\)\")",
-      "Bash(grep -vE \"^\\(build|\\\\.dart_tool|\\\\.idea|\\\\.git\\)$\")"
+      "Bash(grep -vE \"^\\(build|\\\\.dart_tool|\\\\.idea|\\\\.git\\)$\")",
+      "Bash(git ls-tree *)",
+      "Bash(curl -s -o /dev/null -w \"status=%{http_code}\\\\nredirect=%{redirect_url}\\\\n\" \"https://raazwfntdwwpnccqjrdn.supabase.co/auth/v1/authorize?provider=google\")",
+      "Bash(curl -s \"https://raazwfntdwwpnccqjrdn.supabase.co/auth/v1/authorize?provider=google\")"
     ]
   }
 }

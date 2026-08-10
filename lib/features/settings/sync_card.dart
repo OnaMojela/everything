@@ -38,16 +38,33 @@ class _SignedOut extends ConsumerStatefulWidget {
 }
 
 class _SignedOutState extends ConsumerState<_SignedOut> {
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  bool _creatingAccount = false;
+  bool _showPassword = false;
   bool _busy = false;
   String? _error;
 
-  Future<void> _signIn() async {
+  /// Set after signing up on a project that requires email confirmation —
+  /// nothing is signed in until the emailed link is opened.
+  String? _awaitingConfirmation;
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    super.dispose();
+  }
+
+  Future<void> _run(Future<void> Function() action) async {
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      await ref.read(authServiceProvider)!.signInWithGoogle();
+      await action();
     } on AuthException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (e) {
@@ -57,41 +74,210 @@ class _SignedOutState extends ConsumerState<_SignedOut> {
     }
   }
 
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    final auth = ref.read(authServiceProvider)!;
+    await _run(() async {
+      if (_creatingAccount) {
+        final signedIn = await auth.signUpWithEmail(
+          email: _email.text,
+          password: _password.text,
+        );
+        if (!signedIn && mounted) {
+          setState(() => _awaitingConfirmation = _email.text.trim());
+        }
+      } else {
+        await auth.signInWithEmail(
+          email: _email.text,
+          password: _password.text,
+        );
+      }
+    });
+  }
+
+  Future<void> _resetPassword() async {
+    final email = _email.text.trim();
+    if (email.isEmpty) {
+      setState(() => _error = 'Enter your email address first.');
+      return;
+    }
+    await _run(() async {
+      await ref.read(authServiceProvider)!.sendPasswordReset(email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Password reset link sent to $email.')),
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (_awaitingConfirmation case final pending?) {
+      return _ConfirmEmailNotice(
+        email: pending,
+        onBack: () => setState(() => _awaitingConfirmation = null),
+      );
+    }
+
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Sync across your devices', style: theme.textTheme.titleSmall),
+          const SizedBox(height: 4),
+          Text(
+            'Sign in to keep your habits, tasks and finances the same on every '
+            'device. Everything stays on this device too, so the app keeps '
+            'working offline.',
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: Tokens.s16),
+          TextFormField(
+            controller: _email,
+            enabled: !_busy,
+            keyboardType: TextInputType.emailAddress,
+            autofillHints: const [AutofillHints.email],
+            textInputAction: TextInputAction.next,
+            decoration: const InputDecoration(
+              labelText: 'Email',
+              prefixIcon: Icon(Icons.mail_outline_rounded),
+            ),
+            validator: (v) {
+              final value = (v ?? '').trim();
+              if (value.isEmpty) return 'Enter your email address.';
+              // Deliberately loose: the server is the real authority on what
+              // a deliverable address is, and clever regexes reject valid ones.
+              if (!value.contains('@') || !value.contains('.')) {
+                return "That doesn't look like an email address.";
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: Tokens.s12),
+          TextFormField(
+            controller: _password,
+            enabled: !_busy,
+            obscureText: !_showPassword,
+            autofillHints: [
+              _creatingAccount ? AutofillHints.newPassword : AutofillHints.password,
+            ],
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) => _busy ? null : _submit(),
+            decoration: InputDecoration(
+              labelText: 'Password',
+              prefixIcon: const Icon(Icons.lock_outline_rounded),
+              suffixIcon: IconButton(
+                icon: Icon(_showPassword
+                    ? Icons.visibility_off_rounded
+                    : Icons.visibility_rounded),
+                tooltip: _showPassword ? 'Hide password' : 'Show password',
+                onPressed: () => setState(() => _showPassword = !_showPassword),
+              ),
+            ),
+            validator: (v) {
+              final value = v ?? '';
+              if (value.isEmpty) return 'Enter your password.';
+              // Only enforced when creating an account: an existing password
+              // shorter than this should still be allowed to sign in.
+              if (_creatingAccount && value.length < 6) {
+                return 'Use at least 6 characters.';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: Tokens.s16),
+          FilledButton(
+            onPressed: _busy ? null : _submit,
+            child: _busy
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(_creatingAccount ? 'Create account' : 'Sign in'),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: Tokens.s8),
+            Text(
+              _error!,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.error),
+            ),
+          ],
+          const SizedBox(height: Tokens.s4),
+          Row(
+            children: [
+              TextButton(
+                onPressed: _busy
+                    ? null
+                    : () => setState(() {
+                          _creatingAccount = !_creatingAccount;
+                          _error = null;
+                        }),
+                child: Text(_creatingAccount
+                    ? 'I already have an account'
+                    : 'Create an account'),
+              ),
+              const Spacer(),
+              if (!_creatingAccount)
+                TextButton(
+                  onPressed: _busy ? null : _resetPassword,
+                  child: const Text('Forgot password'),
+                ),
+            ],
+          ),
+          const Divider(height: Tokens.s24),
+          OutlinedButton.icon(
+            onPressed: _busy
+                ? null
+                : () => _run(ref.read(authServiceProvider)!.signInWithGoogle),
+            icon: const Icon(Icons.login_rounded, size: 18),
+            label: const Text('Continue with Google'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Shown after signing up on a project that requires email confirmation.
+/// Without this the app would look like it had simply failed — the account
+/// exists, but no session starts until the emailed link is opened.
+class _ConfirmEmailNotice extends StatelessWidget {
+  final String email;
+  final VoidCallback onBack;
+
+  const _ConfirmEmailNotice({required this.email, required this.onBack});
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Sync across your devices', style: theme.textTheme.titleSmall),
-        const SizedBox(height: 4),
+        Row(
+          children: [
+            Icon(Icons.mark_email_unread_rounded, color: theme.colorScheme.primary),
+            const SizedBox(width: Tokens.s8),
+            Expanded(
+              child: Text('Check your inbox', style: theme.textTheme.titleSmall),
+            ),
+          ],
+        ),
+        const SizedBox(height: Tokens.s8),
         Text(
-          'Sign in to keep your habits, tasks and finances the same on every '
-          'device. Everything stays on this device too, so the app keeps '
-          'working offline.',
+          'We sent a confirmation link to $email. Open it to finish creating '
+          'your account, then come back and sign in.',
           style: theme.textTheme.bodySmall
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: Tokens.s12),
-        FilledButton.icon(
-          onPressed: _busy ? null : _signIn,
-          icon: _busy
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.login_rounded),
-          label: const Text('Continue with Google'),
-        ),
-        if (_error != null) ...[
-          const SizedBox(height: Tokens.s8),
-          Text(
-            _error!,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.error),
-          ),
-        ],
+        TextButton(onPressed: onBack, child: const Text('Back to sign in')),
       ],
     );
   }

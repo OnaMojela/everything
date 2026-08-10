@@ -82,11 +82,51 @@ void main() {
     expect(find.text('Sync'), findsOneWidget);
 
     await tester.scrollUntilVisible(
-      find.text('Continue with Google'),
+      find.text('Sign in'),
       200,
       scrollable: find.byType(Scrollable).first,
     );
+    // Email and password are the primary path; Google stays available.
+    expect(find.widgetWithText(TextFormField, 'Email'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'Password'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
     expect(find.text('Continue with Google'), findsOneWidget);
+
+    await unmount(tester);
+  });
+
+  testWidgets('validates the form before calling the network', (tester) async {
+    tester.view.physicalSize = const Size(900, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dbProvider.overrideWithValue(db),
+          syncAvailableProvider.overrideWithValue(true),
+        ],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
+    );
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 120));
+    }
+
+    await tester.scrollUntilVisible(
+      find.text('Sign in'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    // Submitting empty must not reach authServiceProvider, which is null here
+    // — an unvalidated submit would throw on the null assertion.
+    await tester.tap(find.text('Sign in'));
+    await tester.pump(const Duration(milliseconds: 120));
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Enter your email address.'), findsOneWidget);
+    expect(find.text('Enter your password.'), findsOneWidget);
 
     await unmount(tester);
   });

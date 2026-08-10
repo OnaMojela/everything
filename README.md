@@ -128,7 +128,9 @@ Serving from a subpath needs `flutter build web --base-href /subpath/`.
 
 ## Sync
 
-Optional cross-device sync, backed by Supabase. Signing in is never required: without an account the app behaves exactly as it always has, and a build with no Supabase credentials hides the sync UI entirely rather than showing a button that cannot work.
+Optional cross-device sync, backed by Supabase, with email/password or Google sign-in. Signing in is never required: without an account the app behaves exactly as it always has, and a build with no Supabase credentials hides the sync UI entirely rather than showing a button that cannot work.
+
+> A missing Sync section in a deployed build almost always means `SUPABASE_URL` or `SUPABASE_ANON_KEY` was absent at build time — **both** are required. Environment variables are compiled in, so adding them to Vercel needs a redeploy, not just a save.
 
 ### How it works
 
@@ -154,10 +156,24 @@ The same test fails on a normal run whenever the checked-in SQL no longer matche
 
 Two deliberate differences from the local schema: the mirror has **no foreign keys** (SQLite enforces integrity where the app actually reads, and omitting them lets push and pull apply tables in any order), and datetimes are stored as `bigint` unix seconds exactly as Drift stores them locally, which keeps sync a pure passthrough with no date parsing.
 
+### Sign-in methods
+
+**Email and password** is the primary path and needs no provider setup — Supabase enables it by default.
+
+One project setting matters: **Authentication → Sign In / Providers → Email → Confirm email**. Left on (the default), signing up sends a confirmation link and no session starts until it is opened; the app shows a "Check your inbox" step for exactly this. Turn it off for a personal project and accounts are usable immediately.
+
+**Google** is optional and sits below the email form. Until the provider is enabled in Supabase it returns `provider is not enabled` — the button is left in place so it starts working the moment it is switched on. To check the state of a project without involving the app:
+
+```
+https://<project-ref>.supabase.co/auth/v1/authorize?provider=google
+```
+
+A redirect to Google's account picker means enabled; a 400 with `provider is not enabled` means it is not.
+
 ### Supabase setup
 
 1. Create a project, then run the generated migration above.
-2. **Authentication → Providers → Google**: enable it, and paste in the client id and secret from a Google Cloud OAuth **Web application** credential.
+2. **Authentication → Sign In / Providers → Google** *(optional)*: enable it, and paste in the client id and secret from a Google Cloud OAuth **Web application** credential. The panel has its own Save button — toggling the switch alone does not persist.
 3. In Google Cloud, add Supabase's callback to that credential's *Authorized redirect URIs*: `https://<project-ref>.supabase.co/auth/v1/callback`.
 4. **Authentication → URL Configuration**: add every origin the app is served from to *Redirect URLs*, including Vercel preview domains — `https://your-app.vercel.app`, `https://*-your-team.vercel.app`, and `http://localhost:8099` for local testing.
 5. For an Android build, also create an **Android** OAuth client with your signing SHA-1, and pass the *web* client id as `GOOGLE_WEB_CLIENT_ID` — Supabase verifies the ID token against its own client id, which is the web one even on Android.
@@ -168,10 +184,12 @@ Passed at build time as `--dart-define`s, read in `lib/core/auth/supabase_config
 
 | Define | Needed for |
 | --- | --- |
-| `SUPABASE_URL` | everything |
-| `SUPABASE_ANON_KEY` | everything |
-| `GOOGLE_WEB_CLIENT_ID` | Android/iOS native sign-in |
+| `SUPABASE_URL` | any sync at all |
+| `SUPABASE_ANON_KEY` | any sync at all |
+| `GOOGLE_WEB_CLIENT_ID` | Android/iOS native Google sign-in |
 | `GOOGLE_IOS_CLIENT_ID` | iOS only |
+
+The first two are both required — with only one set, `SupabaseConfig.isConfigured` is false and the app builds as offline-only.
 
 All four are public values — the anon/publishable key grants only what RLS allows, and OAuth client ids are public by design. **Never** put the Supabase service-role key in a client build.
 
