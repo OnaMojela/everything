@@ -78,7 +78,14 @@
       "Bash(cp tool/generate_icons.dart /tmp/gen_backup.dart)",
       "Bash(python -c \"pass\")",
       "Bash(cat)",
-      "Bash(sed -i 's/    _infinity\\(markWidth\\),/    _infinityCircles\\(markWidth\\),/' tool/generate_icons.dart)"
+      "Bash(sed -i 's/    _infinity\\(markWidth\\),/    _infinityCircles\\(markWidth\\),/' tool/generate_icons.dart)",
+      "Bash(flutter devices *)",
+      "Bash(git check-ignore *)",
+      "Bash(adb -s 5ZC0225826004951 shell dumpsys package com.everything.everything)",
+      "Bash(timeout 600 flutter run -d 5ZC0225826004951 --release --dart-define-from-file=dart_defines.json)",
+      "Read(//c/Users/Ona/AppData/Local/Pub/Cache/hosted/pub.dev/home_widget-0.7.0/**)",
+      "Bash(git add *)",
+      "Bash(grep -E \"key\\\\.properties$|\\\\.jks$|\\\\.keystore$|^dart_defines\\\\.json$\")"
     ]
   }
 }

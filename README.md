@@ -234,6 +234,27 @@ node tool/serve_web.mjs
 python serve_web.py
 ```
 
+## Android release builds
+
+Two things bite only in release, never in debug, and both crash the app at launch with no Dart stack trace to explain why.
+
+**The `INTERNET` permission.** Flutter injects it into debug and profile manifests so the tooling can attach a debugger, so `flutter run` works whether or not the app declares it. A release APK gets only what `android/app/src/main/AndroidManifest.xml` asks for. `test/android_manifest_test.dart` fails if it goes missing again.
+
+**R8 shrinking.** Release builds are shrunk and renamed, which breaks anything resolved by name at runtime. WorkManager — pulled in by `home_widget` — keeps its queue in a Room database that Room instantiates reflectively; R8 removed its no-arg constructor and the app died before Flutter started:
+
+```
+java.lang.RuntimeException: Unable to get provider androidx.startup.InitializationProvider:
+  Failed to create an instance of androidx.work.impl.WorkDatabase
+```
+
+`android/app/proguard-rules.pro` keeps those constructors, along with the notification receivers, widget providers and the notification-listener service, all of which are named in the manifest rather than called from code.
+
+When a release build crashes on launch and debug is fine, suspect one of these two. The Dart console shows nothing useful — read the Java trace instead:
+
+```bash
+adb logcat -d -b crash
+```
+
 ## Building
 
 ```
