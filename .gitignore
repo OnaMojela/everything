@@ -44,6 +44,12 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Android release signing. Committing either of these hands anyone who clones
+# the repo the ability to publish updates as you.
+android/key.properties
+*.jks
+*.keystore
+
 # Vercel
 .vercel/
 

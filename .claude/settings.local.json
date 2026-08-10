@@ -65,7 +65,20 @@
       "Bash(grep -vE \"^\\(build|\\\\.dart_tool|\\\\.idea|\\\\.git\\)$\")",
       "Bash(git ls-tree *)",
       "Bash(curl -s -o /dev/null -w \"status=%{http_code}\\\\nredirect=%{redirect_url}\\\\n\" \"https://raazwfntdwwpnccqjrdn.supabase.co/auth/v1/authorize?provider=google\")",
-      "Bash(curl -s \"https://raazwfntdwwpnccqjrdn.supabase.co/auth/v1/authorize?provider=google\")"
+      "Bash(curl -s \"https://raazwfntdwwpnccqjrdn.supabase.co/auth/v1/authorize?provider=google\")",
+      "Bash(flutter doctor *)",
+      "Bash(keytool -help)",
+      "Read(//c/Program Files/Android/Android Studio/jbr/bin/**)",
+      "Read(//c/Users/Ona/AppData/Local/Programs/Android Studio/jbr/bin/**)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Users/Ona/.gradle/**)",
+      "Bash(awk '{print $5, $9}')",
+      "Bash(\"/c/Users/Ona/AppData/Local/Android/Sdk/build-tools/36.0.0/apksigner.bat\" verify *)",
+      "Bash(cp tool/generate_icons.dart __TRACKED_VAR__/gen_backup.dart)",
+      "Bash(cp tool/generate_icons.dart /tmp/gen_backup.dart)",
+      "Bash(python -c \"pass\")",
+      "Bash(cat)",
+      "Bash(sed -i 's/    _infinity\\(markWidth\\),/    _infinityCircles\\(markWidth\\),/' tool/generate_icons.dart)"
     ]
   }
 }

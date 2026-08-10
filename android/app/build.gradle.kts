@@ -1,8 +1,25 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+// Release signing credentials, kept out of version control. See
+// android/key.properties.example for the expected keys, and the README for how
+// to generate the keystore.
+//
+// When the file is absent — a fresh clone, or CI that only builds the web app —
+// the release build falls back to debug signing so `flutter run --release`
+// still works. That fallback is deliberately loud in the build output, because
+// a debug-signed APK cannot be published and cannot be upgraded later without
+// uninstalling.
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("key.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+val hasReleaseKeystore = keystoreProperties.getProperty("storeFile") != null
 
 android {
     namespace = "com.everything.everything"
@@ -27,11 +44,30 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (hasReleaseKeystore) {
+                signingConfigs.getByName("release")
+            } else {
+                logger.warn(
+                    "WARNING: android/key.properties not found — signing the release " +
+                        "build with DEBUG keys. This APK cannot be published to Play, " +
+                        "and installing a properly signed build later will require " +
+                        "uninstalling this one first."
+                )
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }
