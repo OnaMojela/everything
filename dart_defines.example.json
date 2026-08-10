@@ -1,0 +1,6 @@
+{
+  "_comment": "Copy to dart_defines.json and fill in. Pass it with --dart-define-from-file=dart_defines.json so builds and runs do not need the values typed out. All of these are public client values; the Supabase service-role key must never appear here.",
+  "SUPABASE_URL": "https://<project-ref>.supabase.co",
+  "SUPABASE_ANON_KEY": "<anon / publishable key>",
+  "GOOGLE_WEB_CLIENT_ID": "<web client id, only needed for native Google sign-in>"
+}

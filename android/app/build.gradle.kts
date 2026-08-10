@@ -57,6 +57,16 @@ android {
 
     buildTypes {
         release {
+            // Flutter shrinks release builds with R8. Anything resolved by
+            // name at runtime — Room's generated database implementations,
+            // manifest-declared receivers and services — has to be kept
+            // explicitly, or the app crashes at process start before Dart
+            // ever runs. See proguard-rules.pro.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+
             signingConfig = if (hasReleaseKeystore) {
                 signingConfigs.getByName("release")
             } else {
