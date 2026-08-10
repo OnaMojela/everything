@@ -85,7 +85,10 @@
       "Bash(timeout 600 flutter run -d 5ZC0225826004951 --release --dart-define-from-file=dart_defines.json)",
       "Read(//c/Users/Ona/AppData/Local/Pub/Cache/hosted/pub.dev/home_widget-0.7.0/**)",
       "Bash(git add *)",
-      "Bash(grep -E \"key\\\\.properties$|\\\\.jks$|\\\\.keystore$|^dart_defines\\\\.json$\")"
+      "Bash(grep -E \"key\\\\.properties$|\\\\.jks$|\\\\.keystore$|^dart_defines\\\\.json$\")",
+      "Bash(git commit -q -m ' *)",
+      "Bash(git push *)",
+      "Bash(grep -E \"key\\\\.properties|\\\\.jks$|dart_defines\\\\.json$\")"
     ]
   }
 }

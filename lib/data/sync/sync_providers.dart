@@ -98,20 +98,37 @@ extension _StartWith<T> on Stream<T> {
   }
 }
 
-/// Wires sync into the app's lifecycle: it runs when someone signs in, when
-/// the app comes back to the foreground, and on a slow timer while in use.
+/// Wires sync into the app's lifecycle. It runs when someone signs in, a few
+/// seconds after an edit, when the app returns to the foreground, and on a
+/// backstop timer while in use.
 ///
-/// Deliberately not on every local edit — ticking off six habits should not
-/// mean six round trips. Changes queue locally and go out together.
+/// Edits are debounced rather than sent one at a time: ticking off six habits
+/// should be one upload, not six. The timer is what carries changes made on
+/// *another* device, so it bounds how stale this one can be.
 class SyncCoordinator with WidgetsBindingObserver {
   final ProviderContainer _container;
   Timer? _periodic;
+  Timer? _pushDebounce;
   ProviderSubscription<AsyncValue<User?>>? _authSub;
+  ProviderSubscription<AsyncValue<int>>? _pendingSub;
   String? _adoptedUserId;
+  DateTime? _firstPendingAt;
 
   SyncCoordinator(this._container);
 
-  static const _interval = Duration(minutes: 5);
+  /// Backstop poll, and the only way changes made on another device arrive.
+  /// Affordable at this frequency because an idle pull is a single request —
+  /// see `SyncService._changedTables`.
+  static const pollInterval = Duration(seconds: 90);
+
+  /// How long to wait after an edit before uploading. Long enough that
+  /// ticking off six habits in a row is one upload rather than six, short
+  /// enough that putting the phone down means the change is already gone.
+  static const pushDelay = Duration(seconds: 3);
+
+  /// Cap on how long the debounce may keep deferring. Without it, a long
+  /// stretch of continuous editing would postpone the upload indefinitely.
+  static const maxPushDelay = Duration(seconds: 20);
 
   void start() {
     if (!_container.read(syncAvailableProvider)) return;
@@ -123,7 +140,42 @@ class SyncCoordinator with WidgetsBindingObserver {
       fireImmediately: true,
     );
 
-    _periodic = Timer.periodic(_interval, (_) => _syncQuietly());
+    // Upload shortly after an edit rather than waiting for the next poll.
+    // The change log already streams a live count, so this is just a debounce
+    // on top of bookkeeping the sync engine keeps anyway.
+    _pendingSub = _container.listen<AsyncValue<int>>(
+      pendingChangesProvider,
+      (_, next) => _onPendingChanged(next.valueOrNull ?? 0),
+    );
+
+    _periodic = Timer.periodic(pollInterval, (_) => _syncQuietly());
+  }
+
+  void _onPendingChanged(int pending) {
+    if (pending == 0) {
+      _pushDebounce?.cancel();
+      _pushDebounce = null;
+      _firstPendingAt = null;
+      return;
+    }
+
+    final now = DateTime.now();
+    _firstPendingAt ??= now;
+
+    // Once the oldest unsent edit is old enough, stop deferring and go.
+    if (now.difference(_firstPendingAt!) >= maxPushDelay) {
+      _pushDebounce?.cancel();
+      _pushDebounce = null;
+      _firstPendingAt = null;
+      _syncQuietly();
+      return;
+    }
+
+    _pushDebounce?.cancel();
+    _pushDebounce = Timer(pushDelay, () {
+      _firstPendingAt = null;
+      _syncQuietly();
+    });
   }
 
   Future<void> _onUser(User? user) async {
@@ -162,7 +214,9 @@ class SyncCoordinator with WidgetsBindingObserver {
 
   void dispose() {
     _periodic?.cancel();
+    _pushDebounce?.cancel();
     _authSub?.close();
+    _pendingSub?.close();
     WidgetsBinding.instance.removeObserver(this);
   }
 }

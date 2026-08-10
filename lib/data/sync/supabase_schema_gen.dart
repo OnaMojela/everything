@@ -82,6 +82,43 @@ String generateSupabaseSchema(GeneratedDatabase db) {
       ..writeln();
   }
 
+  buffer
+    ..writeln('-- ${'-' * 72}')
+    ..writeln('-- One request to ask "did anything change?", instead of one')
+    ..writeln('-- query per table. An idle poll is overwhelmingly the common')
+    ..writeln('-- case, and at 16 tables it was 16 round trips to learn')
+    ..writeln('-- nothing — too expensive to run often enough to feel live.')
+    ..writeln('--')
+    ..writeln('-- security invoker so row level security still applies: the')
+    ..writeln('-- caller only ever sees their own rows.')
+    ..writeln('create or replace function public.sync_changed_tables(since timestamptz)')
+    ..writeln('returns table (table_name text, newest timestamptz)')
+    ..writeln('language sql')
+    ..writeln('stable')
+    ..writeln('security invoker')
+    ..writeln('set search_path = public')
+    ..writeln('as \$\$')
+    ..writeln('  select name, newest from (');
+
+  for (var i = 0; i < syncedTables.length; i++) {
+    final table = syncedTables[i];
+    buffer
+      ..writeln("    select '${table.name}'::text as name,")
+      ..writeln('           max(sync_updated_at) as newest')
+      ..writeln('      from public.${table.name}')
+      ..writeln('     where user_id = auth.uid()')
+      ..writeln('       and sync_updated_at >= since');
+    if (i != syncedTables.length - 1) buffer.writeln('    union all');
+  }
+
+  buffer
+    ..writeln('  ) t')
+    // A table with no matching rows still produces a row here, with a null
+    // max — dropping those is what makes an empty result mean "nothing new".
+    ..writeln('  where newest is not null;')
+    ..writeln('\$\$;')
+    ..writeln();
+
   return '${_preamble.trimRight()}\n\n${buffer.toString().trimRight()}\n';
 }
 

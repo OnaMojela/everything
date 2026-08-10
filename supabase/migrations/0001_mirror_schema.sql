@@ -549,3 +549,118 @@ drop trigger if exists inbox_items_touch on public.inbox_items;
 create trigger inbox_items_touch
   before insert or update on public.inbox_items
   for each row execute function public.touch_sync_updated_at();
+
+-- ------------------------------------------------------------------------
+-- One request to ask "did anything change?", instead of one
+-- query per table. An idle poll is overwhelmingly the common
+-- case, and at 16 tables it was 16 round trips to learn
+-- nothing — too expensive to run often enough to feel live.
+--
+-- security invoker so row level security still applies: the
+-- caller only ever sees their own rows.
+create or replace function public.sync_changed_tables(since timestamptz)
+returns table (table_name text, newest timestamptz)
+language sql
+stable
+security invoker
+set search_path = public
+as $$
+  select name, newest from (
+    select 'habits'::text as name,
+           max(sync_updated_at) as newest
+      from public.habits
+     where user_id = auth.uid()
+       and sync_updated_at >= since
+    union all
+    select 'tasks'::text as name,
+           max(sync_updated_at) as newest
+      from public.tasks
+     where user_id = auth.uid()
+       and sync_updated_at >= since
+    union all
+    select 'planner_events'::text as name,
+           max(sync_updated_at) as newest
+      from public.planner_events
+     where user_id = auth.uid()
+       and sync_updated_at >= since
+    union all
+    select 'focus_subjects'::text as name,
+           max(sync_updated_at) as newest
+      from public.focus_subjects
+     where user_id = auth.uid()
+       and sync_updated_at >= since
+    union all
+    select 'accounts'::text as name,
+           max(sync_updated_at) as newest
+      from public.accounts
+     where user_id = auth.uid()
+       and sync_updated_at >= since
+    union all
+    select 'categories'::text as name,
+           max(sync_updated_at) as newest
+      from public.categories
+     where user_id = auth.uid()
+       and sync_updated_at >= since
+    union all
+    select 'habit_entries'::text as name,
+           max(sync_updated_at) as newest
+      from public.habit_entries
+     where user_id = auth.uid()
+       and sync_updated_at >= since
+    union all
+    select 'subtasks'::text as name,
+           max(sync_updated_at) as newest
+      from public.subtasks
+     where user_id = auth.uid()
+       and sync_updated_at >= since
+    union all
+    select 'focus_sessions'::text as name,
+           max(sync_updated_at) as newest
+      from public.focus_sessions
+     where user_id = auth.uid()
+       and sync_updated_at >= since
+    union all
+    select 'transactions'::text as name,
+           max(sync_updated_at) as newest
+      from public.transactions
+     where user_id = auth.uid()
+       and sync_updated_at >= since
+    union all
+    select 'budgets'::text as name,
+           max(sync_updated_at) as newest
+      from public.budgets
+     where user_id = auth.uid()
+       and sync_updated_at >= since
+    union all
+    select 'bills'::text as name,
+           max(sync_updated_at) as newest
+      from public.bills
+     where user_id = auth.uid()
+       and sync_updated_at >= since
+    union all
+    select 'goals'::text as name,
+           max(sync_updated_at) as newest
+      from public.goals
+     where user_id = auth.uid()
+       and sync_updated_at >= since
+    union all
+    select 'recurring_transactions'::text as name,
+           max(sync_updated_at) as newest
+      from public.recurring_transactions
+     where user_id = auth.uid()
+       and sync_updated_at >= since
+    union all
+    select 'merchant_rules'::text as name,
+           max(sync_updated_at) as newest
+      from public.merchant_rules
+     where user_id = auth.uid()
+       and sync_updated_at >= since
+    union all
+    select 'inbox_items'::text as name,
+           max(sync_updated_at) as newest
+      from public.inbox_items
+     where user_id = auth.uid()
+       and sync_updated_at >= since
+  ) t
+  where newest is not null;
+$$;

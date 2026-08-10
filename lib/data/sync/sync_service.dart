@@ -287,9 +287,52 @@ ON CONFLICT(table_name, row_id) DO NOTHING;''');
 
   /// Applies server changes, parents before children so local foreign keys
   /// always have something to point at.
+  ///
+  /// Asks the server once which tables have anything new before querying any
+  /// of them. Polling often enough to feel live is only affordable because an
+  /// idle cycle costs a single request rather than one per table.
   Future<void> _pull(String userId) async {
+    final changed = await _changedTables();
     for (final table in syncedTables) {
+      if (changed != null && !changed.contains(table.name)) continue;
       await _pullTable(userId, table);
+    }
+  }
+
+  /// Table names with rows newer than the oldest cursor we hold, or null if
+  /// the server could not answer — in which case the caller falls back to
+  /// checking every table, so a project that has not run the latest migration
+  /// still syncs correctly, just less efficiently.
+  Future<Set<String>?> _changedTables() async {
+    // The oldest cursor is the only safe question to ask: a table with nothing
+    // newer than that cannot have anything newer than its own cursor, which is
+    // at least as recent.
+    var oldest = DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+    var first = true;
+    for (final table in syncedTables) {
+      final raw = await _readState(SyncKeys.cursor(table.name));
+      final cursor = raw == null ? null : DateTime.tryParse(raw);
+      if (cursor == null) return null; // Never pulled — check everything.
+      if (first || cursor.isBefore(oldest)) {
+        oldest = cursor;
+        first = false;
+      }
+    }
+
+    try {
+      final rows = await supabase.rpc(
+        'sync_changed_tables',
+        params: {
+          'since': oldest.subtract(_cursorOverlap).toUtc().toIso8601String(),
+        },
+      );
+      return {
+        for (final row in (rows as List).cast<Map<String, dynamic>>())
+          row['table_name'] as String,
+      };
+    } on PostgrestException {
+      // Function missing (migration not applied yet) or not callable.
+      return null;
     }
   }
 
