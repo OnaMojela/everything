@@ -3,6 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'fitting_text.dart';
+
+export 'fitting_text.dart' show FittingText, TextFitCache;
 
 /// The standard surface of the app: a rounded, borderless card.
 class AppCard extends StatelessWidget {
@@ -522,11 +525,12 @@ class StatTile extends StatelessWidget {
                 Icon(icon, size: 16, color: color ?? theme.colorScheme.primary),
                 const SizedBox(width: 6),
               ],
+              // Labels like "Longest session" and values like "1h 40m" are
+              // sized by the grid, not by their content, so they shrink to fit
+              // rather than ellipsising — "Total …" tells the reader nothing.
               Expanded(
-                child: Text(
+                child: FittingText(
                   label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelMedium
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
@@ -534,9 +538,7 @@ class StatTile extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          Text(value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          FittingText(value,
               style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
         ],
       ),

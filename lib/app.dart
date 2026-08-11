@@ -93,11 +93,22 @@ class _Centered extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: Breakpoints.contentMaxWidth),
-        child: child,
+    // Painted across the whole viewport, not just the capped content column.
+    // A pushed route has no Scaffold of its own behind it, so on a wide window
+    // the margins either side were left unpainted and showed through to the
+    // route underneath — which is why Settings looked different from every
+    // screen reached through the navigation rail.
+    //
+    // Reading the colour from the theme rather than naming one keeps it
+    // correct across Light, Dark and OLED and every accent.
+    return ColoredBox(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: Breakpoints.contentMaxWidth),
+          child: child,
+        ),
       ),
     );
   }

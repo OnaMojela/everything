@@ -34,12 +34,25 @@ class AppShell extends ConsumerWidget {
     final dests = <_Dest>[
       const _Dest(0, 'Home', Icons.grid_view_outlined, Icons.grid_view_rounded),
       if (settings.showProductivity)
-        const _Dest(1, 'Productivity', Icons.check_circle_outline_rounded,
-            Icons.check_circle_rounded),
+        const _Dest(
+          1,
+          'Productivity',
+          Icons.check_circle_outline_rounded,
+          Icons.check_circle_rounded,
+        ),
       if (settings.showFinance)
-        const _Dest(2, 'Finance', Icons.account_balance_wallet_outlined,
-            Icons.account_balance_wallet_rounded),
-      const _Dest(3, 'Analytics', Icons.insights_outlined, Icons.insights_rounded),
+        const _Dest(
+          2,
+          'Finance',
+          Icons.account_balance_wallet_outlined,
+          Icons.account_balance_wallet_rounded,
+        ),
+      const _Dest(
+        3,
+        'Analytics',
+        Icons.insights_outlined,
+        Icons.insights_rounded,
+      ),
     ];
 
     var selected = dests.indexWhere((d) => d.branch == shell.currentIndex);
@@ -54,7 +67,9 @@ class AppShell extends ConsumerWidget {
     final body = Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: Breakpoints.contentMaxWidth),
+        constraints: const BoxConstraints(
+          maxWidth: Breakpoints.contentMaxWidth,
+        ),
         child: shell,
       ),
     );
@@ -81,59 +96,84 @@ class AppShell extends ConsumerWidget {
     return Scaffold(
       body: Row(
         children: [
-          NavigationRail(
-            selectedIndex: selected,
-            onDestinationSelected: go,
-            extended: extendedRail,
-            minExtendedWidth: 200,
-            backgroundColor: theme.colorScheme.surfaceContainerLow,
-            labelType: extendedRail ? null : NavigationRailLabelType.all,
-            leading: Padding(
-              padding: EdgeInsets.fromLTRB(extendedRail ? 4 : 0, Tokens.s16, 0, Tokens.s8),
-              child: extendedRail
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _Logo(color: theme.colorScheme.primary),
-                        const SizedBox(width: Tokens.s12),
-                        Text('Everything',
-                            style: theme.textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700)),
-                      ],
-                    )
-                  : _Logo(color: theme.colorScheme.primary),
-            ),
-            trailing: Expanded(
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: Tokens.s16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.search_rounded),
-                        tooltip: 'Search',
-                        onPressed: () => context.push('/search'),
+          // The rail bottom-aligns its trailing buttons by filling the height,
+          // which overflows once the window is shorter than logo +
+          // destinations + buttons — landscape on a phone, most obviously.
+          // Letting it scroll below that height keeps everything reachable,
+          // while the minimum height preserves the bottom alignment whenever
+          // there is room.
+          LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: NavigationRail(
+                    selectedIndex: selected,
+                    onDestinationSelected: go,
+                    extended: extendedRail,
+                    minExtendedWidth: 200,
+                    backgroundColor: theme.colorScheme.surfaceContainerLow,
+                    labelType: extendedRail
+                        ? null
+                        : NavigationRailLabelType.all,
+                    leading: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        extendedRail ? 4 : 0,
+                        Tokens.s16,
+                        0,
+                        Tokens.s8,
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.settings_outlined),
-                        tooltip: 'Settings',
-                        onPressed: () => context.push('/settings'),
+                      child: extendedRail
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _Logo(color: theme.colorScheme.primary),
+                                const SizedBox(width: Tokens.s12),
+                                Text(
+                                  'Everything',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : _Logo(color: theme.colorScheme.primary),
+                    ),
+                    trailing: Expanded(
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: Tokens.s16),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.search_rounded),
+                                tooltip: 'Search',
+                                onPressed: () => context.push('/search'),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.settings_outlined),
+                                tooltip: 'Settings',
+                                onPressed: () => context.push('/settings'),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
+                    ),
+                    destinations: [
+                      for (final d in dests)
+                        NavigationRailDestination(
+                          icon: Icon(d.icon),
+                          selectedIcon: Icon(d.selectedIcon),
+                          label: Text(d.label),
+                        ),
                     ],
                   ),
                 ),
               ),
             ),
-            destinations: [
-              for (final d in dests)
-                NavigationRailDestination(
-                  icon: Icon(d.icon),
-                  selectedIcon: Icon(d.selectedIcon),
-                  label: Text(d.label),
-                ),
-            ],
           ),
           Expanded(child: body),
         ],
@@ -155,7 +195,11 @@ class _Logo extends StatelessWidget {
         color: color,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: const Icon(Icons.all_inclusive_rounded, size: 20, color: Colors.white),
+      child: const Icon(
+        Icons.all_inclusive_rounded,
+        size: 20,
+        color: Colors.white,
+      ),
     );
   }
 }

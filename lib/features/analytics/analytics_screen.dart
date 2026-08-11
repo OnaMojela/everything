@@ -167,7 +167,7 @@ class _ProductivityAnalytics extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Focus Â· last 7 days (minutes)', style: theme.textTheme.titleSmall),
+              Text('Focus · last 7 days (minutes)', style: theme.textTheme.titleSmall),
               const SizedBox(height: Tokens.s16),
               SizedBox(
                 height: 140,

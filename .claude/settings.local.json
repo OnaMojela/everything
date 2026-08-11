@@ -89,7 +89,8 @@
       "Bash(git commit -q -m ' *)",
       "Bash(git push *)",
       "Bash(grep -E \"key\\\\.properties|\\\\.jks$|dart_defines\\\\.json$\")",
-      "Bash(git rev-list *)"
+      "Bash(git rev-list *)",
+      "Bash(dart format *)"
     ]
   }
 }

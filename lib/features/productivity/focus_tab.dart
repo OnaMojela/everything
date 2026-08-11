@@ -445,21 +445,29 @@ class _FocusTabState extends ConsumerState<FocusTab> {
                   label: Text(pomodoroMode ? 'Start pomodoro' : 'Start focus'),
                 ),
               ] else
+                // The two buttons share the row rather than sizing themselves:
+                // a fixed 160px minimum on Finish plus Discard's intrinsic
+                // width overflowed narrow phones by a few pixels.
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    OutlinedButton.icon(
-                      onPressed: () => _finish(save: false),
-                      icon: const Icon(Icons.close_rounded),
-                      label: const Text('Discard'),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 52)),
+                        onPressed: () => _finish(save: false),
+                        icon: const Icon(Icons.close_rounded),
+                        label: const Text('Discard'),
+                      ),
                     ),
                     const SizedBox(width: Tokens.s12),
-                    FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                          minimumSize: const Size(160, 52), backgroundColor: color),
-                      onPressed: () => _finish(save: true),
-                      icon: const Icon(Icons.stop_rounded),
-                      label: const Text('Finish'),
+                    Expanded(
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                            minimumSize: const Size(0, 52), backgroundColor: color),
+                        onPressed: () => _finish(save: true),
+                        icon: const Icon(Icons.stop_rounded),
+                        label: const Text('Finish'),
+                      ),
                     ),
                   ],
                 ),
