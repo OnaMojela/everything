@@ -124,6 +124,13 @@ Serving from a subpath needs `flutter build web --base-href /subpath/`.
 
 **Platform differences.** Local notifications, biometric app lock and Android home-screen widgets are phone-only capabilities. Rather than showing controls that do nothing, the web build hides them (see `lib/core/platform/platform_support.dart`); everything else is identical. A release web build also registers a service worker, so the app keeps working offline after the first visit and can be installed as a PWA.
 
+**Installed on iOS.** Two settings in `web/index.html` exist specifically to keep taps landing where they should once the app is added to the home screen, and both look harmless enough to "tidy away":
+
+- `apple-mobile-web-app-status-bar-style` is `default`, **not** `black-translucent`. Translucent extends the web view under the status bar, but Flutter positions pointer events without accounting for that inset, so the whole app renders about a status bar too low and every tap lands above its target.
+- `body` is `position: fixed; overflow: hidden`. Any scroll offset the document picks up — rubber-banding, or the keyboard shrinking the visual viewport — moves what is drawn without moving where taps are measured from. Flutter scrolls its own content, so the document never needs to.
+
+Note that iOS caches these when the app is added to the home screen. Changing them requires deleting the icon and re-adding it; a reload will not pick them up.
+
 **Layout.** Below 700px the app uses the bottom navigation bar; above it switches to a side rail (labelled past 1100px), the dashboard becomes two columns, and content is capped at 1080px so it stays readable on wide monitors.
 
 ## Sync

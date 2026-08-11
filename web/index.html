@@ -11,7 +11,13 @@
   <meta name="theme-color" content="#121216" media="(prefers-color-scheme: dark)">
 
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- Deliberately not "black-translucent". In an iOS home-screen app that
+       extends the web view underneath the status bar, but Flutter positions
+       pointer events without accounting for the inset — so everything renders
+       roughly a status bar too low and every tap lands above its target.
+       "default" makes iOS lay the view out below the status bar, which puts
+       the render and hit-test origins back in agreement. -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Everything">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
   <link rel="icon" type="image/png" href="favicon.png"/>
@@ -28,6 +34,22 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       overscroll-behavior: none;
     }
+
+    /* Pin the document to the viewport. iOS will otherwise let the page itself
+       scroll a little — rubber-banding, or the keyboard shrinking the visual
+       viewport — and any scroll offset the document picks up shifts what is
+       drawn without shifting where taps are measured from. Flutter scrolls its
+       own content, so the document never needs to. */
+    body {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      overflow: hidden;
+    }
+    /* No safe-area padding here on purpose: Flutter reads the insets itself
+       and exposes them through MediaQuery, so the app's own SafeArea already
+       keeps content clear of the notch. Padding the body as well would inset
+       everything twice. */
     @media (prefers-color-scheme: dark) {
       html, body { background: #121216; }
     }
